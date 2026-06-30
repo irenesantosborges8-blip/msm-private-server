@@ -21,6 +21,7 @@ import server.Entities.PlayerIsland;
 import server.Entities.PlayerIslandFactory;
 import server.Entities.PlayerStructure;
 import server.Tools.Util;
+import static server.Tools.Util.sql;
 
 public class JoinZoneHandler extends BaseServerEventHandler {
 	
@@ -171,8 +172,8 @@ public class JoinZoneHandler extends BaseServerEventHandler {
         } else {
         	long user_island_id = new JSONObject(MainExtension.sqlHandler.sendCommand("SELECT COUNT(*) FROM player_islands;")).getJSONArray("result").getJSONArray(0).getInt(0) + 1;
         	
-        	MainExtension.sqlHandler.sendCommand("INSERT INTO players (last_login, id, date_created, active_island, nickname) VALUES ('"+serverTime+"', '"+ userGameId+"', '"+ serverTime +"', '1', 'New Player');");
-        	MainExtension.sqlHandler.sendCommand("INSERT INTO player_islands (user_game_id, island_id) VALUES ('" + userGameId + "', '1');");
+        	MainExtension.sqlHandler.sendCommand("INSERT INTO players (last_login, id, date_created, active_island, nickname) VALUES ("+Util.sql(serverTime)+", "+Util.sql(userGameId)+", "+Util.sql(serverTime)+", 1, "+Util.sql("New Player")+");");
+        	MainExtension.sqlHandler.sendCommand("INSERT INTO player_islands (user_game_id, island_id) VALUES ("+Util.sql(userGameId)+", 1);");
     	    PlayerIsland island = PlayerIsland.createNewIsland(bbbId, 1, 1, user_island_id);
     	    
     	    player.active_island = user_island_id;
@@ -190,10 +191,10 @@ public class JoinZoneHandler extends BaseServerEventHandler {
 					+ 2201 + "');"
 			);
 			
-	        Util.PostRequest(
-	        	    "https://discord.com/api/webhooks/1388224087003889834/WR8a9JEcMCv9tmQGkXJPsoueXyX1tuoE6aYhr6yh3rvpHda95lNCkWzrFAPtOJx1S5H3",
-	        	    "{\"content\": \"new account created!\"}"
-	        	);
+	        String webhook = MainExtension.config.getProperty("discord.webhook_url", "");
+	        if (!webhook.isEmpty()) {
+	        	Util.PostRequest(webhook, "{\"content\": \"new account created!\"}");
+	        }
         }
     	
         JSONArray result = new JSONObject(

@@ -672,23 +672,20 @@ public class GameStateHandler extends BaseClientRequestHandler {
 	        
 	        if (!successStructure.getBool("ok")) {
 		        response.putUtfString("msg", successStructure.getUtfString("msg"));
-
-		        //send("gs_display_generic_message", response, user);
-		        //break;
 	        }
 			long user_structure_id = PlayerIslandFactory.getNextUserStructureId(userGameId);
 			MainExtension.sqlHandler.sendCommand(
-				    "INSERT INTO player_structures (user_island_id, structure_id, user_structure_id, user_game_id, pos_x, pos_y, scale, flip, name, date_created) VALUES ('"
-				    + player.active_island + "', '"
-				    + params.getInt("structure_id") + "', '"
-				    + user_structure_id + "', '"
-				    + userGameId + "', '"
-				    + params.getInt("pos_x") + "', '"
-				    + params.getInt("pos_y") + "', '"
-				    + params.getDouble("scale") + "', '"
-				    + params.getInt("flip") + "', '"
-				    + "Structure" + "', '"
-				    + serverTime + "');"
+				    "INSERT INTO player_structures (user_island_id, structure_id, user_structure_id, user_game_id, pos_x, pos_y, scale, flip, name, date_created) VALUES ("
+				    + Util.sql(player.active_island) + ", "
+				    + Util.sql(params.getInt("structure_id")) + ", "
+				    + Util.sql(user_structure_id) + ", "
+				    + Util.sql(userGameId) + ", "
+				    + Util.sql(params.getInt("pos_x")) + ", "
+				    + Util.sql(params.getInt("pos_y")) + ", "
+				    + Util.sql(params.getDouble("scale")) + ", "
+				    + Util.sql(params.getInt("flip")) + ", "
+				    + Util.sql("Structure") + ", "
+				    + Util.sql(serverTime) + ");"
 				);
 			
 			trace("Buying structure for user_island_id: " + player.active_island);
@@ -926,17 +923,17 @@ public class GameStateHandler extends BaseClientRequestHandler {
 					    monsterName
 					);
 				
-				MainExtension.sqlHandler.sendCommand("INSERT INTO player_monsters (user_island_id, monster_id, user_monster_id, user_game_id, pos_x, pos_y, muted, flip, name, date_created) VALUES ('"
-					    + player.active_island + "', '"
-					    + monster_id + "', '"
-					    + user_monster_id + "', '"
-					    + userGameId + "', '"
-					    + params.getInt("pos_x") + "', '"
-					    + params.getInt("pos_y") + "', '"
-					    + 0 + "', '"
-					    + params.getInt("flip") + "', '"
-					    + monsterName + "', '"
-					    + serverTime + "');");
+				MainExtension.sqlHandler.sendCommand("INSERT INTO player_monsters (user_island_id, monster_id, user_monster_id, user_game_id, pos_x, pos_y, muted, flip, name, date_created) VALUES ("
+					    + Util.sql(player.active_island) + ", "
+					    + Util.sql(monster_id) + ", "
+					    + Util.sql(user_monster_id) + ", "
+					    + Util.sql(userGameId) + ", "
+					    + Util.sql(params.getInt("pos_x")) + ", "
+					    + Util.sql(params.getInt("pos_y")) + ", "
+					    + "0, "
+					    + Util.sql(params.getInt("flip")) + ", "
+					    + Util.sql(monsterName) + ", "
+					    + Util.sql(serverTime) + ");");
 	
 	            response.putSFSArray("properties",  player.getProperties());
 	            
@@ -1284,7 +1281,7 @@ public class GameStateHandler extends BaseClientRequestHandler {
 	        response.putSFSArray("tracks", new SFSArray());
 	        response.putSFSArray("songs", new SFSArray());
 	        
-			MainExtension.sqlHandler.sendCommand("INSERT INTO player_islands (user_game_id, island_id) VALUES ('" + userGameId + "', '" + params.getInt("island_id") + "');");
+			MainExtension.sqlHandler.sendCommand("INSERT INTO player_islands (user_game_id, island_id) VALUES (" + Util.sql(userGameId) + ", " + Util.sql(params.getInt("island_id")) + ");");
 			send(cmd, response, user);
 			break;
 		case "gs_mute_monster":
@@ -1607,7 +1604,7 @@ public class GameStateHandler extends BaseClientRequestHandler {
 		case "gs_set_displayname":
 			response.putBool("success", true);
 			response.putUtfString("displayName", params.getUtfString("newName"));
-			MainExtension.sqlHandler.sendCommand("UPDATE players SET nickname = '" + params.getUtfString("newName") + "' WHERE id = '" + userGameId + "';");
+			MainExtension.sqlHandler.sendCommand("UPDATE players SET nickname = " + Util.sql(params.getUtfString("newName")) + " WHERE id = " + Util.sql(userGameId) + ";");
 			send(cmd, response, user);
 			break;
 		case "gs_set_avatar":

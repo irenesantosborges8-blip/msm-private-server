@@ -19,15 +19,40 @@ public class Settings {
 
     static {
         String osName = System.getProperty("os.name");
+        String userDir = System.getProperty("user.dir");
         if (osName != null && osName.toLowerCase().contains("linux")) {
             ServerRoot = "/home/ubuntu/MSMSandbox/ServerData";
         } else {
-            ServerRoot = "D:\\MSMSandbox\\ServerData";
+            String localProp = userDir + "/local.properties";
+            java.io.File propFile = new java.io.File(localProp);
+            if (propFile.exists()) {
+                try {
+                    java.util.Properties props = new java.util.Properties();
+                    try (java.io.FileInputStream fis = new java.io.FileInputStream(propFile)) {
+                        props.load(fis);
+                    }
+                    String customRoot = props.getProperty("server.root");
+                    if (customRoot != null && !customRoot.isEmpty()) {
+                        ServerRoot = customRoot;
+                        return;
+                    }
+                } catch (Exception e) {
+                    // fallback
+                }
+            }
+            ServerRoot = userDir + "/ServerData";
         }
     }
 
     public static String getJsonDb() {
-        return ServerRoot + "/json_db/Settings.json";
+        String path = ServerRoot + "/json_db/Settings.json";
+        File f = new File(path);
+        if (f.exists()) return path;
+        String userDir = System.getProperty("user.dir");
+        String alt = userDir + "/Settings.json";
+        File altF = new File(alt);
+        if (altF.exists()) return alt;
+        return path;
     }
 
     public static void setExtension(MainExtension extension) {

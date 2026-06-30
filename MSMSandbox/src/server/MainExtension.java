@@ -2,28 +2,13 @@ package server;
 
 import com.smartfoxserver.v2.extensions.SFSExtension;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.InflaterInputStream;
-
-import javax.net.ssl.HttpsURLConnection;
+import java.util.Properties;
 
 import org.json.JSONObject;
 
-import com.smartfoxserver.v2.api.ISFSApi;
-import com.smartfoxserver.v2.core.SFSEvent;
-import com.smartfoxserver.v2.core.SFSEventParam;
 import com.smartfoxserver.v2.core.SFSEventType;
 import com.smartfoxserver.v2.entities.User;
 import com.smartfoxserver.v2.entities.data.SFSArray;
@@ -36,11 +21,12 @@ import server.ServerEventHandler.LoginHandler;
 import server.Tools.MSMClient;
 import server.Tools.SQLHandler;
 import server.Tools.Util;
-import sfs2x.client.SmartFox;
 
 public class MainExtension extends SFSExtension {
-    public static String encryptionVector = Settings.get("encryption_vector");
-    public static String encryptionSecretKey = Settings.get("encryption_secret_key");
+    public static Properties config = new Properties();
+    
+    public static String encryptionVector;
+    public static String encryptionSecretKey;
     
     public static int sessionsSinceStart;
     
@@ -66,9 +52,29 @@ public class MainExtension extends SFSExtension {
         can_play = false;
         cant_play_reason = "Server reloading!";
 
-        client = new MSMClient("g92gtktd9wcj", "mj28v95q7xmvb4r5tkf8", "anon", "4.8.4", allowedVersions.getUtfString("4.8.4"), true);
+        String bbbUser = config.getProperty("bbb.username", "g92gtktd9wcj");
+        String bbbPass = config.getProperty("bbb.password", "mj28v95q7xmvb4r5tkf8");
+        String bbbLogin = config.getProperty("bbb.login_type", "anon");
+        String bbbVer = config.getProperty("bbb.client_version", "4.8.4");
+        String bbbKey = config.getProperty("bbb.access_key", allowedVersions.getUtfString("4.8.4"));
+
+        client = new MSMClient(bbbUser, bbbPass, bbbLogin, bbbVer, bbbKey, true);
 
         try {
+            String cacheDir = Settings.ServerRoot + "/data_cache";
+            File cacheFile = new File(cacheDir + "/game_data.json");
+            
+            if (cacheFile.exists()) {
+                trace("Loading game data from local cache...");
+                String json = Util.ReadFile(cacheFile);
+                if (json != null && !json.isEmpty()) {
+                    client.loadFromCache(json);
+                    trace("Local cache loaded successfully");
+                    can_play = true;
+                    return;
+                }
+            }
+
             SFSObject auth = client.auth();
             trace("Auth response: " + auth.toJson());
 
@@ -81,14 +87,48 @@ public class MainExtension extends SFSExtension {
                 }
                 
                 client.connectToServer();
+
+                new java.util.Timer().schedule(new java.util.TimerTask() {
+                    public void run() {
+                        if (client.downloads.size() > 0) {
+                            new File(cacheDir).mkdirs();
+                            String cacheJson = client.saveToCache();
+                            Util.WriteFile(cacheFile, cacheJson, false);
+                            trace("Game data cached to " + cacheFile);
+                        }
+                        can_play = true;
+                    }
+                }, 5000);
             } else {
                 trace("Auth failed: " + auth.getUtfString("message"));
+                can_play = true;
             }
         } catch (Exception e) {
             trace("Error in cacheDbs: " + e.toString());
+            can_play = true;
         }
-
-        can_play = true;
+    }
+    
+    private void loadConfig() {
+        String userDir = System.getProperty("user.dir");
+        String[] paths = {
+            userDir + "/config.properties",
+            userDir + "/../config.properties",
+            Settings.ServerRoot + "/config.properties"
+        };
+        for (String path : paths) {
+            File f = new File(path);
+            if (f.exists()) {
+                try (InputStream is = new FileInputStream(f)) {
+                    config.load(is);
+                    trace("Loaded config from " + path);
+                    return;
+                } catch (Exception e) {
+                    trace("Error loading config: " + e.toString());
+                }
+            }
+        }
+        trace("No config.properties found, using defaults");
     }
     
     @Override
@@ -96,13 +136,19 @@ public class MainExtension extends SFSExtension {
     	Settings.setExtension(this);
     	Settings.logServerRoot();
     	
+    	loadConfig();
+    	
+        encryptionVector = config.getProperty("encryption.vector", Settings.get("encryption_vector"));
+        encryptionSecretKey = config.getProperty("encryption.secret", Settings.get("encryption_secret_key"));
+
         startTime = Util.getUnixTime();
         
         allowedVersions.putUtfString("4.6.1", "193f6d49-4051-4adc-9949-fa4f4e9fd43a");
         allowedVersions.putUtfString("4.8.2", "70ba5d5d-d903-4587-93d6-655c4814844f");
         allowedVersions.putUtfString("4.8.4", "33cdd406-b5e0-4ebf-8891-2c28b84af2ea");
         
-        sqlHandler = new SQLHandler("no");
+        String dbPassword = config.getProperty("db.password", "no");
+        sqlHandler = new SQLHandler(dbPassword);
         
         addEventHandler(SFSEventType.USER_LOGIN, LoginHandler.class);
         addEventHandler(SFSEventType.USER_JOIN_ZONE, JoinZoneHandler.class);
@@ -335,8 +381,6 @@ public class MainExtension extends SFSExtension {
         addRequestHandler("gs_start_synthesizing", GameStateHandler.class);
         addRequestHandler("gs_speedup_synthesizing", GameStateHandler.class);
         addRequestHandler("gs_collect_synthesizing_failure", GameStateHandler.class);
-		
-		//JSONObject tokenRequest = new JSONObject(Util.PostRequest("https://auth.bbbgame.net/auth/api/anon_account/?g=27", ""));
         
         cacheDbs();
         

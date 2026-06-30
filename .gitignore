@@ -1,0 +1,23 @@
+# IDE
+.settings/
+.classpath
+.project
+bin/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# JAR
+*.jar
+
+# Config local
+local.properties
+*.local.properties
+
+# Cache
+cache/
+*.cache.json
+
+# Logs
+*.log

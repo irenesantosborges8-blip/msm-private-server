@@ -516,6 +516,31 @@ public class MSMClient extends SmartFox {
         return result;
     }
     
+    public String saveToCache() {
+        SFSObject cache = new SFSObject();
+        cache.putSFSArray("downloads", this.downloads);
+        cache.putSFSArray("game_settings", this.game_settings);
+        cache.putSFSObject("friends", this.friends);
+        cache.putSFSObject("friend", this.friend);
+        return cache.toJson();
+    }
+
+    public void loadFromCache(String json) {
+        SFSObject cache = SFSObject.newFromJsonData(json);
+        if (cache.containsKey("downloads")) {
+            this.downloads = (SFSArray) cache.getSFSArray("downloads");
+        }
+        if (cache.containsKey("game_settings")) {
+            this.game_settings = cache.getSFSArray("game_settings");
+        }
+        if (cache.containsKey("friends")) {
+            this.friends = cache.getSFSObject("friends");
+        }
+        if (cache.containsKey("friend")) {
+            this.friend = cache.getSFSObject("friend");
+        }
+    }
+
     public SFSObject getGenesOfMonster(int monsterId) {
         SFSObject response = new SFSObject();
 

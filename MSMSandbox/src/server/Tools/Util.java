@@ -329,4 +329,32 @@ public class Util {
         byte[] binaryData = original.toBinary();
         return SFSArray.newFromBinaryData(binaryData);
     }
+
+    public static String sql(String value) {
+        if (value == null) return "NULL";
+        return "'" + value
+            .replace("\\", "\\\\")
+            .replace("'", "''")
+            .replace("\0", "\\0")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
+            .replace("\u001a", "\\Z") + "'";
+    }
+
+    public static String sql(long value) {
+        return String.valueOf(value);
+    }
+
+    public static String sql(int value) {
+        return String.valueOf(value);
+    }
+
+    public static String sql(double value) {
+        return String.valueOf(value);
+    }
+
+    public static String sql(boolean value) {
+        return value ? "1" : "0";
+    }
 }
