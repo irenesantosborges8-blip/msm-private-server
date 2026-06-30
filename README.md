@@ -1,7 +1,6 @@
-# MSMSandbox-Master
-##### This readme was made with the assistance of generative AI. The code was not.
+# MSM Private Server
 
-This repository contains the **full code** for the MSM Sandbox, a private server project I developed between January and July 2025.
+Fork of MSM Sandbox com melhorias de segurança, configuração externalizada e cache local.
 
 > [!NOTE]
 > This is the code specifically for the sfs2x server. The pregame setup and auth server code is not included in this repository.
@@ -48,6 +47,15 @@ Notes for contributors:
 * Pull requests and bug reports are welcome, but make sure to test changes locally before submitting.
 
 The server automatically sets paths depending on the OS. On Linux, ServerRoot points to `/home/ubuntu/MSMSandbox/ServerData`; on Windows, it defaults to `D:\MSMSandbox\ServerData`. The JSON database is located at `ServerRoot + "/json_db/Settings.json"`. Make sure these directories exist when running locally. Our Settings.json is available inside the repository.
+
+## Improvements in this fork
+
+- **Config externalizada**: Credenciais, chaves de criptografia e URLs movidas para `config.properties`
+- **SQL injection**: Função `Util.sql()` para sanitizar todas as queries
+- **Cache local**: `MSMClient.saveToCache()` / `loadFromCache()` para funcionar offline
+- **Paths relativos**: `Settings.java` usa diretório do projeto, com fallback para `local.properties`
+- **Webhook externalizado**: URL do Discord configurável via `discord.webhook_url`
+- **.gitignore** adicionado
 
 ## Contributing
 
