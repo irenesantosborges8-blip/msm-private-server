@@ -1,0 +1,60 @@
+plugins {
+    id 'java'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['MSMSandbox/src']
+        }
+        output.classesDirs = file('MSMSandbox/bin')
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation fileTree(dir: 'lib', include: '*.jar')
+    implementation files('MSMSandbox/lib/sfs2x.jar')
+    implementation files('MSMSandbox/lib/sfs2x-core.jar')
+    implementation files('MSMSandbox/lib/sfs2x-lib.jar')
+    implementation files('MSMSandbox/lib/sfs2x-util.jar')
+    implementation files('MSMSandbox/lib/sfs2x-client-core.jar')
+    implementation files('MSMSandbox/lib/commons-lang-2.4.jar')
+    implementation files('MSMSandbox/lib/jdom.jar')
+    implementation files('MSMSandbox/lib/netty-3.2.2.Final.jar')
+    implementation files('MSMSandbox/lib/slf4j-api-1.6.1.jar')
+    implementation files('MSMSandbox/lib/slf4j-simple-1.6.1.jar')
+    implementation files('MSMSandbox/lib/gson-2.10.1.jar')
+}
+
+jar {
+    archiveBaseName = 'mainExtension'
+    destinationDirectory = file('dist')
+    from sourceSets.main.output
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+clean {
+    delete file('dist')
+}
+
+task setupDeps {
+    doLast {
+        def libDir = file('MSMSandbox/lib')
+        libDir.mkdirs()
+        def sfs2xDir = file('MSMSandbox/sfs2x')
+        if (sfs2xDir.exists()) {
+            copy {
+                from sfs2xDir
+                include '**/*.jar'
+                into libDir
+            }
+        } else {
+            println "SFS2X not found at MSMSandbox/sfs2x/. Create this folder and copy the SmartFoxServer 2X jars into it."
+            println "Required jars: sfs2x.jar, sfs2x-core.jar, sfs2x-lib.jar, sfs2x-util.jar"
+        }
+    }
+}
